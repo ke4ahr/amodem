@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from setuptools import setup
+from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 
 class PyTest(TestCommand):
@@ -15,13 +15,13 @@ class PyTest(TestCommand):
 
 setup(
     name='amodem',
-    version='1.15.5',
+    version='1.15.6',
     description='Audio Modem Communication Library',
     author='Roman Zeyde',
     author_email='dev@romanzey.de',
     license='MIT',
     url='http://github.com/romanz/amodem',
-    packages=['amodem'],
+    packages=find_packages(),
     tests_require=['pytest'],
     cmdclass={'test': PyTest},
     install_requires=['numpy'],
