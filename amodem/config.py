@@ -4,10 +4,15 @@ import numpy as np
 
 
 class Configuration:
-    Fs = 32000.0  # sampling frequency [Hz]
-    Tsym = 0.001  # symbol duration [seconds]
-    Npoints = 64
+    Fs = 32000.0  # sampling frequency [Hz], e.g. 32000.0 or 44100.0
+    Tsym = 0.002  # symbol duration [seconds]
+    # This is (1/symbol rate). Symbol rate is also known as baud.
+    Npoints = 64 # QAM constellation decision points
     frequencies = [1e3, 8e3]  # use 1..8 kHz carriers
+    # carrier_interval = 1e3 # carriers separated by [Hz]
+    # Carriers are automatically spaced using the functions below.
+    symbol_rate = 1200 # carrier speed [Hz]
+    # This overrides Tsym.
 
     # audio config
     bits_per_sample = 16
@@ -27,19 +32,32 @@ class Configuration:
         self.sample_size = self.bits_per_sample // 8
         assert self.sample_size * 8 == self.bits_per_sample
 
+        self.Tsym = 1.0 / self.symbol_rate
         self.Ts = 1.0 / self.Fs
         self.Fsym = 1 / self.Tsym
         self.Nsym = int(self.Tsym / self.Ts)
         self.baud = int(1.0 / self.Tsym)
         assert self.baud * self.Tsym == 1
+        print ("** Tsym: ", self.Tsym, "symbol_rate: ", self.symbol_rate)
 
         if len(self.frequencies) != 1:
             first, last = self.frequencies
-            self.frequencies = np.arange(first, last + self.baud, self.baud)
+            print ("** first", first, "last: ", last)
+            print (" *** self.frequencies: ", self.frequencies)
+            if first < self.baud:
+                first = self.baud
+                print (" *** first", first, "last: ", last)
+            #self.frequencies = np.arange(first, last + self.baud, self.baud)
+            self.frequencies = np.arange(first, last, self.baud)
+        #else:
+        #    assert self.baud >= self.frequencies[0]
 
         self.Nfreq = len(self.frequencies)
         self.carrier_index = 0
         self.Fc = self.frequencies[self.carrier_index]
+        print ("** self.frequencies: ", self.frequencies)
+        print ("** self.baud: ", self.baud)
+        # FIXME: Throw an exception is the chosen BITRATE has a single frequency below baud_rate.
 
         bits_per_symbol = int(np.log2(self.Npoints))
         assert 2 ** bits_per_symbol == self.Npoints
@@ -60,6 +78,8 @@ class Configuration:
 
 
 # MODEM configurations for various bitrates [kbps]
+# This is a dictionary. Any number will work as long as it makes it through
+# getopts. 
 bitrates = {
     1: Configuration(Fs=8e3, Npoints=2, frequencies=[2e3]),
     2: Configuration(Fs=8e3, Npoints=4, frequencies=[2e3]),
@@ -79,6 +99,14 @@ bitrates = {
     64: Configuration(Fs=32e3, Npoints=256, frequencies=[3e3, 10e3]),
     72: Configuration(Fs=32e3, Npoints=256, frequencies=[2e3, 10e3]),
     80: Configuration(Fs=32e3, Npoints=256, frequencies=[2e3, 11e3]),
+    90: Configuration(Fs=32e3, Npoints=256, frequencies=[500]),
+    91: Configuration(Fs=32e3, Npoints=256, frequencies=[1e3]),
+    92: Configuration(Fs=32e3, Npoints=256, frequencies=[2e3]),
+    93: Configuration(Fs=32e3, Npoints=256, frequencies=[1e3,2e3]),
+    94: Configuration(Fs=32e3, Npoints=256, frequencies=[1e3,1500]),
+    95: Configuration(Fs=32e3, Npoints=256, frequencies=[1e3,3e3]),
+    98: Configuration(Fs=32e3, Npoints=4096, frequencies=[2e3]),
+    99: Configuration(Fs=32e3, Npoints=1024, frequencies=[2e3]),
 }
 
 
